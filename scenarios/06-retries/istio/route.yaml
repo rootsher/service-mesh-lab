@@ -1,0 +1,22 @@
+# Istio reads the retry field of HTTPRoute, which is still in the
+# experimental channel of Gateway API. Only idempotent requests should be
+# retried; these are GETs. Istio retries on a different endpoint than the
+# one that failed when it can.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: payments-retries
+  namespace: demo
+spec:
+  parentRefs:
+    - group: ""
+      kind: Service
+      name: payments
+      port: 9898
+  rules:
+    - retry:
+        codes: [500, 502, 503]
+        attempts: 3
+      backendRefs:
+        - name: payments-v1
+          port: 9898

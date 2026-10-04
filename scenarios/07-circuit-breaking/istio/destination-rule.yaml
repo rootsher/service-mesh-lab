@@ -1,0 +1,17 @@
+# Envoy calls it outlier detection. Gateway API has no field for it, so this
+# is Istio's own DestinationRule, applied by the waypoint. After three
+# consecutive 5xx an endpoint is ejected for a minute; at most half of them
+# can be out at once, so payments-v1 is never left with nothing.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: payments-v1
+  namespace: demo
+spec:
+  host: payments-v1.demo.svc.cluster.local
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 5s
+      baseEjectionTime: 1m
+      maxEjectionPercent: 50
