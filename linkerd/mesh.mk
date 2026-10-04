@@ -22,6 +22,7 @@ mesh:
 	$(HELM) upgrade --install linkerd-cni linkerd2-cni \
 		--repo $(LINKERD_REPO) --version $(LINKERD_VERSION) \
 		--namespace linkerd-cni --create-namespace \
+		--values linkerd/cni.values.yaml \
 		--wait
 	$(KUBECTL) -n cert-manager get secret mesh-root -o jsonpath='{.data.ca\.crt}' | base64 -d > .trust-anchor.crt
 	$(HELM) upgrade --install linkerd-control-plane linkerd-control-plane \

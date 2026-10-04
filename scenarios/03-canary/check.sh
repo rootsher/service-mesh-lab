@@ -16,5 +16,7 @@ v1=$(echo "$out" | count '^200 payments v1$')
 v2=$(echo "$out" | count '^200 payments v2$')
 echo "        300 requests: v1 $v1, v2 $v2"
 [ $((v1 + v2)) -eq 300 ] || fail "every request answered by v1 or v2"
-[ "$v2" -ge 12 ] && [ "$v2" -le 50 ] || fail "v2 gets about 10% (expected 12 to 50 of 300, got $v2)"
+if [ "$v2" -lt 12 ] || [ "$v2" -gt 50 ]; then
+  fail "v2 gets about 10% (expected 12 to 50 of 300, got $v2)"
+fi
 pass "v2 gets about 10% of requests"

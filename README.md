@@ -203,10 +203,12 @@ version is pinned in `linkerd/mesh.mk` and moves forward deliberately.
 **Istio 1.30.** 1.31 is out, but its Helm charts were not published yet when
 this was set up. The charts and `istioctl` move together.
 
-**CNI for both.** Without Linkerd's CNI plugin, every meshed pod gets an
-init container that needs `NET_ADMIN` and runs as root, which breaks
+**CNI for both.** Without Linkerd's CNI plugin, every meshed pod gets an init
+container that needs `NET_ADMIN` and runs as root, which breaks
 `runAsNonRoot` on the pod. Ambient has its CNI node agent anyway. Either way,
 the workloads keep the same security context they would have without a mesh.
+Linkerd's plugin runs with its repair controller, which recreates pods that
+started on a node before the plugin was ready there.
 
 **Gateway API CRDs from upstream.** Mesh charts can install them, but then
 their version follows the mesh. Installing them separately keeps them under

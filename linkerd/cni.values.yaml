@@ -1,0 +1,7 @@
+# A pod that starts on a node before the CNI plugin has written its config
+# gets no traffic redirection, and its network validator init container
+# fails for good: restarting it does not redo the pod's network. The repair
+# controller deletes such pods so they come back with the plugin in place.
+# Without it, a busy node at install time can leave the control plane stuck.
+repairController:
+  enabled: true
