@@ -1,0 +1,36 @@
+# The root of trust for workload identity. cert-manager creates it once and
+# signs one intermediate per mesh with it, so the mesh never holds the root
+# key. In a real cluster the root would come from Vault or an offline CA
+# rather than a self-signed issuer; nothing downstream of mesh-root changes.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mesh-root
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: mesh-root
+  secretName: mesh-root
+  duration: 87600h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Never
+  issuerRef:
+    kind: ClusterIssuer
+    name: selfsigned
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: mesh-root
+spec:
+  ca:
+    secretName: mesh-root

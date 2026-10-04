@@ -1,0 +1,30 @@
+# The identity issuer: an intermediate CA that Linkerd's identity controller
+# uses to sign a certificate for every proxy. It lives for two days and is
+# renewed after one. The controller watches the Secret and picks up a new
+# issuer without a restart; proxies keep their certificates until their own
+# 24 hour renewal.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-identity-issuer
+  namespace: linkerd
+spec:
+  isCA: true
+  commonName: identity.linkerd.cluster.local
+  dnsNames:
+    - identity.linkerd.cluster.local
+  secretName: linkerd-identity-issuer
+  duration: 48h
+  renewBefore: 24h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - cert sign
+    - crl sign
+    - server auth
+    - client auth
+  issuerRef:
+    kind: ClusterIssuer
+    name: mesh-root

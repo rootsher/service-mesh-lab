@@ -1,0 +1,26 @@
+# istiod signs workload certificates with this intermediate instead of a
+# self-signed root of its own. cert-manager writes it to the cacerts Secret,
+# which istiod reads at start and watches afterwards; workloads trust the
+# chain up to mesh-root.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: istio-ca
+  namespace: istio-system
+spec:
+  isCA: true
+  commonName: istio-ca
+  secretName: cacerts
+  duration: 720h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - cert sign
+    - crl sign
+    - digital signature
+  issuerRef:
+    kind: ClusterIssuer
+    name: mesh-root
