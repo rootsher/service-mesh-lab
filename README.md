@@ -1,5 +1,7 @@
 # service-mesh-lab
 
+[![ci](https://github.com/rootsher/service-mesh-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/rootsher/service-mesh-lab/actions/workflows/ci.yml)
+
 Linkerd and Istio in ambient mode on a local kind cluster, and seven things a
 mesh is usually brought in for, each one checked by a script that sends real
 requests and fails if the mesh does not do what it should.
