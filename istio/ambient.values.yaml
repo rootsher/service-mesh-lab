@@ -1,0 +1,3 @@
+# istiod and the CNI node agent both read the profile. ambient turns off
+# sidecar injection and has the CNI agent hand pod traffic to ztunnel.
+profile: ambient

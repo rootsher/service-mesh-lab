@@ -1,0 +1,16 @@
+# One Envoy per namespace instead of one per pod. Routes, retries, timeouts
+# and HTTP authorization in demo are all enforced here; without it, ambient
+# only does L4: mTLS and identity based allow or deny.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: waypoint
+  namespace: demo
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE

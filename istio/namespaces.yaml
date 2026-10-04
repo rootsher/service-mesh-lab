@@ -1,0 +1,16 @@
+# Joining the mesh in ambient mode is a label, and nothing happens to the
+# pods: no sidecar, no restart. ztunnel on each node takes over their traffic
+# and wraps it in mTLS. use-waypoint sends traffic for every Service in the
+# namespace through the waypoint below, which is where HTTP is understood.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+  labels:
+    istio.io/dataplane-mode: ambient
+    istio.io/use-waypoint: waypoint
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outside
