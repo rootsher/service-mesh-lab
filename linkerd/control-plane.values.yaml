@@ -1,0 +1,10 @@
+# The issuer certificate comes from cert-manager (platform/identity), so the
+# chart only reads the Secret. The trust anchor is passed on the command line
+# from the same root, see the Makefile.
+identity:
+  issuer:
+    scheme: kubernetes.io/tls
+
+# Pods get their iptables rules from the CNI plugin instead of a root init
+# container, so workloads can keep runAsNonRoot at the pod level.
+cniEnabled: true

@@ -1,0 +1,13 @@
+# Joining the mesh is one annotation on the namespace: the proxy injector
+# adds a sidecar to every pod created in it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+  annotations:
+    linkerd.io/inject: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outside
