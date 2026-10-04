@@ -1,0 +1,44 @@
+# The same image in a namespace the mesh does not manage: no identity, no
+# proxy, plain TCP. It shows what the mesh refuses.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: outside
+  namespace: outside
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outside
+  namespace: outside
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: outside
+  template:
+    metadata:
+      labels:
+        app: outside
+    spec:
+      serviceAccountName: outside
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: ghcr.io/stefanprodan/podinfo:6.15.0@sha256:ec73780a8425f59ea49f5bc8cdff0d598805a224fbaa1f86c67a244f250fa9da
+          command: ["sleep", "infinity"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

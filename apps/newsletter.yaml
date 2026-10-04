@@ -1,0 +1,55 @@
+# A marketing service inside the mesh, with an identity of its own. Calling
+# orders is fine, and its steady trickle of calls flows on through orders to
+# payments, so the metrics have something to show. It has no reason to call
+# payments itself; scenario 02 makes sure it cannot.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: newsletter
+  namespace: demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newsletter
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: newsletter
+  template:
+    metadata:
+      labels:
+        app: newsletter
+      annotations:
+        kubectl.kubernetes.io/default-container: app
+    spec:
+      serviceAccountName: newsletter
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: ghcr.io/stefanprodan/podinfo:6.15.0@sha256:ec73780a8425f59ea49f5bc8cdff0d598805a224fbaa1f86c67a244f250fa9da
+          command:
+            - sh
+            - -c
+            - |
+              while true; do
+                curl -s -o /dev/null -X POST -d hello http://orders:9898/echo
+                sleep 0.5
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

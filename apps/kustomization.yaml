@@ -1,0 +1,9 @@
+# The workloads are the same for both meshes. How a namespace joins the mesh
+# lives in linkerd/ and istio/, not here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - orders.yaml
+  - payments.yaml
+  - newsletter.yaml
+  - outside.yaml

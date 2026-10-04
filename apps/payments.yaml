@@ -1,0 +1,169 @@
+# The payment service, in two versions. `payments` selects both,
+# `payments-v1` and `payments-v2` exist so routes can pick one. Without a
+# route, `payments` splits by replica count like any Service.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: payments
+  namespace: demo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments
+  namespace: demo
+spec:
+  selector:
+    app: payments
+  ports:
+    - name: http
+      port: 9898
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-v1
+  namespace: demo
+spec:
+  selector:
+    app: payments
+    version: v1
+  ports:
+    - name: http
+      port: 9898
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-v2
+  namespace: demo
+spec:
+  selector:
+    app: payments
+    version: v2
+  ports:
+    - name: http
+      port: 9898
+      targetPort: http
+---
+# Two replicas, so one of them can be made to fail while the other keeps
+# serving: that is what the retry and circuit breaking scenarios need.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-v1
+  namespace: demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payments
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: payments
+        version: v1
+      annotations:
+        kubectl.kubernetes.io/default-container: app
+    spec:
+      serviceAccountName: payments
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: payments
+              version: v1
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: ghcr.io/stefanprodan/podinfo:6.15.0@sha256:ec73780a8425f59ea49f5bc8cdff0d598805a224fbaa1f86c67a244f250fa9da
+          command: ["./podinfo", "--port=9898", "--level=info"]
+          env:
+            - name: PODINFO_UI_MESSAGE
+              value: payments v1
+          ports:
+            - name: http
+              containerPort: 9898
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-v2
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payments
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: payments
+        version: v2
+      annotations:
+        kubectl.kubernetes.io/default-container: app
+    spec:
+      serviceAccountName: payments
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: ghcr.io/stefanprodan/podinfo:6.15.0@sha256:ec73780a8425f59ea49f5bc8cdff0d598805a224fbaa1f86c67a244f250fa9da
+          command: ["./podinfo", "--port=9898", "--level=info"]
+          env:
+            - name: PODINFO_UI_MESSAGE
+              value: payments v2
+          ports:
+            - name: http
+              containerPort: 9898
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
