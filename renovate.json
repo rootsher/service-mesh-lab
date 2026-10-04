@@ -1,0 +1,113 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "minimumReleaseAge": "3 days",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Images pinned by tag and digest: kind nodes and podinfo.",
+      "managerFilePatterns": [
+        "/^kind\\.yaml$/",
+        "/^apps/.+\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: (?<depName>[\\w.-]+(?:/[\\w.-]+)+):(?<currentValue>[\\w.-]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Gateway API CRDs.",
+      "managerFilePatterns": [
+        "/^Makefile$/"
+      ],
+      "matchStrings": [
+        "GATEWAY_API_VERSION := (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "kubernetes-sigs/gateway-api",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "cert-manager chart.",
+      "managerFilePatterns": [
+        "/^Makefile$/"
+      ],
+      "matchStrings": [
+        "CERT_MANAGER_VERSION := (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "cert-manager",
+      "registryUrlTemplate": "https://charts.jetstack.io",
+      "datasourceTemplate": "helm"
+    },
+    {
+      "customType": "regex",
+      "description": "Linkerd edge charts, all from one release.",
+      "managerFilePatterns": [
+        "/^linkerd/mesh\\.mk$/"
+      ],
+      "matchStrings": [
+        "LINKERD_VERSION := (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "linkerd-control-plane",
+      "registryUrlTemplate": "https://helm.linkerd.io/edge",
+      "datasourceTemplate": "helm"
+    },
+    {
+      "customType": "regex",
+      "description": "Istio charts, all from one release.",
+      "managerFilePatterns": [
+        "/^istio/mesh\\.mk$/"
+      ],
+      "matchStrings": [
+        "ISTIO_VERSION := (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "istiod",
+      "registryUrlTemplate": "https://istio-release.storage.googleapis.com/charts",
+      "datasourceTemplate": "helm"
+    },
+    {
+      "customType": "regex",
+      "description": "kubernetes-sigs/kind installed in CI.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "KIND_VERSION: (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "kubernetes-sigs/kind",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "yannh/kubeconform installed in CI.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "KUBECONFORM_VERSION: (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "yannh/kubeconform",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "kubernetes/kubernetes installed in CI.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "KUBECTL_VERSION: (?<currentValue>\\S+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
+}
