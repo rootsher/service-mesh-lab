@@ -1,0 +1,13 @@
+# Linkerd already speaks mTLS between meshed pods without any of this. What
+# it does not do by default is turn plain text away: a pod outside the mesh
+# can still connect. A Server that covers the http port of every pod in the
+# namespace, with all-authenticated as its policy, closes that.
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata:
+  name: demo-http
+  namespace: demo
+spec:
+  podSelector: {}
+  port: http
+  accessPolicy: all-authenticated

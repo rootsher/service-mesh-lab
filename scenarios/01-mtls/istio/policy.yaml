@@ -1,0 +1,11 @@
+# ztunnel already wraps traffic between ambient pods in mTLS. By default it
+# also still accepts plain text, so that workloads can join the mesh one at a
+# time. STRICT for the namespace stops accepting it.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: strict
+  namespace: demo
+spec:
+  mtls:
+    mode: STRICT

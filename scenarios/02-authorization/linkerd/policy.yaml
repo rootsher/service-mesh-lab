@@ -1,0 +1,39 @@
+# A Server for the payments port that denies by default, and one policy that
+# lets the orders service account in. It matches on pods, so it holds for
+# every Service in front of them and for calls straight to a pod IP.
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata:
+  name: payments
+  namespace: demo
+spec:
+  podSelector:
+    matchLabels:
+      app: payments
+  port: http
+  accessPolicy: deny
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: orders
+  namespace: demo
+spec:
+  identityRefs:
+    - kind: ServiceAccount
+      name: orders
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: payments-from-orders
+  namespace: demo
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: payments
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: orders

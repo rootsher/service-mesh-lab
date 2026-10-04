@@ -1,0 +1,46 @@
+# In ambient mode the decision is made in two places, and both are needed.
+#
+# The waypoint sees the original caller and HTTP, so the rule that matters,
+# only orders, is attached to the Services and answers 403.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: payments-from-orders
+  namespace: demo
+spec:
+  targetRefs:
+    - kind: Service
+      group: ""
+      name: payments
+    - kind: Service
+      group: ""
+      name: payments-v1
+    - kind: Service
+      group: ""
+      name: payments-v2
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/demo/sa/orders
+---
+# Traffic sent to a pod IP does not go through the waypoint at all. ztunnel
+# in front of the pods only sees L4 and the identity of whoever connects, so
+# here the only allowed caller is the waypoint itself. Without this, the
+# policy above is a suggestion.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: payments-only-via-waypoint
+  namespace: demo
+spec:
+  selector:
+    matchLabels:
+      app: payments
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/demo/sa/waypoint
