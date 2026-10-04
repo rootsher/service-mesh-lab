@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Weekly, so a broken upstream chart or image shows up before a reader
+    # tries make up.
+    - cron: "0 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  KIND_VERSION: v0.33.0
+  KUBECTL_VERSION: v1.37.1
+  KUBECONFORM_VERSION: v0.8.0
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: shellcheck
+        run: shellcheck -x -P SCRIPTDIR scripts/*.sh istio/*.sh scenarios/*/*.sh scenarios/*/*/*.sh
+      - name: install kubeconform
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar xz -C "$HOME/.local/bin" kubeconform
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      # Mesh specific kinds without a published schema are skipped rather
+      # than guessed; the e2e job applies them to a real API server. Helm
+      # values are not manifests.
+      - name: kubeconform
+        run: |
+          kubeconform -strict -summary -ignore-missing-schemas \
+            -ignore-filename-pattern '\.values\.yaml$' \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            apps identity linkerd istio scenarios
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        mesh: [linkerd, istio]
+    name: e2e (${{ matrix.mesh }})
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.22.0
+      - name: install kind and kubectl
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSLo "$HOME/.local/bin/kind" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          curl -fsSLo "$HOME/.local/bin/kubectl" "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x "$HOME/.local/bin/kind" "$HOME/.local/bin/kubectl"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: make up
+        run: make up MESH=${{ matrix.mesh }}
+      - name: make test
+        run: make test MESH=${{ matrix.mesh }}
+      - name: state on failure
+        if: failure()
+        run: |
+          kubectl --context kind-mesh-${{ matrix.mesh }} get pods -A -o wide
+          kubectl --context kind-mesh-${{ matrix.mesh }} get events -A --sort-by=.lastTimestamp | tail -50
