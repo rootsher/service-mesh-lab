@@ -1,0 +1,19 @@
+# timeouts.request is part of the standard channel since Gateway API 1.2, so
+# this file is also the same in Linkerd and Istio.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: payments-timeout
+  namespace: demo
+spec:
+  parentRefs:
+    - group: ""
+      kind: Service
+      name: payments
+      port: 9898
+  rules:
+    - timeouts:
+        request: 1s
+      backendRefs:
+        - name: payments
+          port: 9898

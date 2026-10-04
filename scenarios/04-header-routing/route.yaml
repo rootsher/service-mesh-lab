@@ -1,0 +1,24 @@
+# Rules are matched most specific first, so the header rule wins over the
+# catch all regardless of order. The same file works in Linkerd and Istio.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: payments-by-header
+  namespace: demo
+spec:
+  parentRefs:
+    - group: ""
+      kind: Service
+      name: payments
+      port: 9898
+  rules:
+    - matches:
+        - headers:
+            - name: x-canary
+              value: "true"
+      backendRefs:
+        - name: payments-v2
+          port: 9898
+    - backendRefs:
+        - name: payments-v1
+          port: 9898
