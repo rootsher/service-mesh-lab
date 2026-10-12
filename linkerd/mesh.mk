@@ -1,4 +1,4 @@
-LINKERD_VERSION := 2026.9.3
+LINKERD_VERSION := 2026.10.1
 LINKERD_REPO := https://helm.linkerd.io/edge
 
 # Linkerd reads HTTPRoute for traffic splitting and timeouts, and takes
