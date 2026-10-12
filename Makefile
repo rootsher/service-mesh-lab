@@ -9,7 +9,7 @@ CONTEXT := kind-$(CLUSTER)
 KUBECTL := kubectl --context $(CONTEXT)
 HELM := helm --kube-context $(CONTEXT)
 
-GATEWAY_API_VERSION := v1.6.2
+GATEWAY_API_VERSION := v1.6.3
 CERT_MANAGER_VERSION := v1.21.2
 
 export KUBE_CONTEXT := $(CONTEXT)
